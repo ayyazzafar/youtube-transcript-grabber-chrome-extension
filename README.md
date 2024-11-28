@@ -1,60 +1,50 @@
-# YouTube Transcript Grabber
+# React + TypeScript + Vite
 
-A Chrome extension that allows you to extract video transcripts directly from YouTube thumbnails without opening the videos.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Features
+Currently, two official plugins are available:
 
-- 📝 Extract transcripts with one click from video thumbnails
-- 📋 Automatically copies transcript to clipboard
-- ✨ Works on YouTube homepage, search results, and channel pages
-- 🎯 Visual feedback for loading, success, and error states
-- 🌐 Supports videos with English captions
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Installation
+## Expanding the ESLint configuration
 
-### From Source
+If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/your-username/youtube-transcript-grabber.git
-   ```
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" in the top right corner
-4. Click "Load unpacked" and select the extension directory
+- Configure the top-level `parserOptions` property like this:
 
-## Usage
+```js
+export default tseslint.config({
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
 
-1. Visit YouTube (www.youtube.com)
-2. Hover over any video thumbnail to see the transcript button (📝)
-3. Click the button to copy the video's transcript to your clipboard
-4. Visual feedback will indicate success (green) or failure (red)
+- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
+- Optionally add `...tseslint.configs.stylisticTypeChecked`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
 
-## Limitations
+```js
+// eslint.config.js
+import react from 'eslint-plugin-react'
 
-- Only works with videos that have English captions available
-- Does not work with auto-generated captions
-- Requires video thumbnails to be visible on screen
-
-## Files
-
-- `manifest.json` - Extension configuration
-- `content.js` - Main functionality for transcript extraction
-- `styles.css` - Styling for the transcript button
-- `icon48.png` & `icon128.png` - Extension icons
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Thanks to YouTube's caption system
-- Inspired by the need for quick access to video transcripts
+export default tseslint.config({
+  // Set the react version
+  settings: { react: { version: '18.3' } },
+  plugins: {
+    // Add the react plugin
+    react,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended rules
+    ...react.configs.recommended.rules,
+    ...react.configs['jsx-runtime'].rules,
+  },
+})
+```

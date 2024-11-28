@@ -1,0 +1,92 @@
+.transcript-button-container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 90;
+}
+
+.transcript-button {
+  background-color: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  height: 32px;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+
+  &.loading {
+    animation: spin 1s linear infinite;
+  }
+
+  &.success {
+    background-color: rgba(46, 125, 50, 0.9);
+  }
+
+  &.error {
+    background-color: rgba(211, 47, 47, 0.9);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tooltip {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  animation: fadeIn 0.2s ease;
+  z-index: 91;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Sidebar loading and error states
+.loading {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+}
+
+.error {
+  padding: 16px;
+  text-align: center;
+  color: #dc2626;
+}
+
+// Prevent page content from shifting when sidebar opens
+body.sidebar-open {
+  margin-right: 300px;
+  transition: margin-right 0.3s ease;
+} 

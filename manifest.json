@@ -3,8 +3,13 @@
   "name": "YouTube Transcript Grabber",
   "version": "1.0",
   "description": "Extract transcripts from YouTube videos directly from thumbnails",
-  "permissions": ["clipboardWrite", "activeTab"],
-  "host_permissions": ["https://www.youtube.com/*"],
+  "permissions": [
+    "clipboardWrite",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ],
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
@@ -13,7 +18,13 @@
     }
   ],
   "icons": {
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Show Transcript"
   }
 }

@@ -1,0 +1,8 @@
+# Remove existing dist folder
+rm -rf dist
+
+# Generate icons
+npx tsx scripts/generate-icons.ts
+
+# Build the extension
+npm run build
