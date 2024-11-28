@@ -8,6 +8,7 @@ export interface TranscriptResponse {
   segments: TranscriptSegment[];
   success: boolean;
   error?: string;
+  language?: string;
 }
 
 export interface VideoMetadata {

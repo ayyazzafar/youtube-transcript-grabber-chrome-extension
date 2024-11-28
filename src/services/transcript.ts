@@ -1,5 +1,11 @@
 import { TranscriptResponse } from '@/types/youtube';
 
+export interface CaptionTrack {
+  languageCode: string;
+  name: { simpleText: string };
+  baseUrl: string;
+}
+
 export class TranscriptService {
   private static instance: TranscriptService;
   
@@ -12,7 +18,25 @@ export class TranscriptService {
     return TranscriptService.instance;
   }
 
-  public async getTranscript(videoId: string): Promise<TranscriptResponse> {
+  public async getAvailableLanguages(videoId: string): Promise<CaptionTrack[]> {
+    try {
+      const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
+      const html = await response.text();
+
+      const captionsMatch = html.match(/"captionTracks":\[(.*?)\]/);
+      if (!captionsMatch) {
+        return [];
+      }
+
+      const captionsData = JSON.parse(`[${captionsMatch[1]}]`);
+      return captionsData as CaptionTrack[];
+    } catch (error) {
+      console.error('Error fetching available languages:', error);
+      return [];
+    }
+  }
+
+  public async getTranscript(videoId: string, languageCode?: string): Promise<TranscriptResponse> {
     try {
       const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
       const html = await response.text();
@@ -27,21 +51,26 @@ export class TranscriptService {
         };
       }
 
-      const captionsData = JSON.parse(`[${captionsMatch[1]}]`);
-      const englishCaptions = captionsData.find(
-        (caption: { languageCode: string }) => caption.languageCode === "en"
-      );
+      const captionsData = JSON.parse(`[${captionsMatch[1]}]`) as CaptionTrack[];
+      
+      // If languageCode is provided, try to find that specific language
+      // Otherwise, try English first, then fall back to the first available language
+      const selectedCaptions = languageCode
+        ? captionsData.find(caption => caption.languageCode === languageCode)
+        : captionsData.find(caption => caption.languageCode === "en") || captionsData[0];
 
-      if (!englishCaptions) {
+      if (!selectedCaptions) {
         return {
           segments: [],
           success: false,
-          error: 'No English captions found'
+          error: languageCode 
+            ? `No captions found for language code: ${languageCode}`
+            : 'No captions found'
         };
       }
 
       // Get transcript from the baseUrl
-      const transcriptResponse = await fetch(englishCaptions.baseUrl);
+      const transcriptResponse = await fetch(selectedCaptions.baseUrl);
       const transcriptXml = await transcriptResponse.text();
 
       // Parse XML and extract text
@@ -57,7 +86,8 @@ export class TranscriptService {
 
       return {
         segments,
-        success: true
+        success: true,
+        language: selectedCaptions.name.simpleText
       };
     } catch (error) {
       console.error('Transcript fetch error:', error);

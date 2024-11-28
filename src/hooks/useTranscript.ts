@@ -6,14 +6,14 @@ export const useTranscript = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const grabTranscript = async (videoId: string) => {
+  const grabTranscript = async (videoId: string, languageCode?: string) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
       const transcriptService = TranscriptService.getInstance();
-      const transcript = await transcriptService.getTranscript(videoId);
+      const transcript = await transcriptService.getTranscript(videoId, languageCode);
 
       if (!transcript.success) {
         setError(transcript.error || 'Failed to fetch transcript');

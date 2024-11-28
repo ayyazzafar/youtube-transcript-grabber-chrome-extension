@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranscript } from '@/hooks/useTranscript';
 import { ButtonContainer } from './styles';
+import { TranscriptService, CaptionTrack } from '@/services/transcript';
 
 interface TranscriptButtonProps {
   videoId: string;
@@ -10,12 +11,30 @@ interface TranscriptButtonProps {
 export const TranscriptButton: React.FC<TranscriptButtonProps> = ({ videoId, buttonType }) => {
   const { grabTranscript, loading, error, success } = useTranscript();
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showLanguages, setShowLanguages] = useState(false);
+  const [languages, setLanguages] = useState<CaptionTrack[]>([]);
 
-  const handleClick = async (e: React.MouseEvent) => {
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      const transcriptService = TranscriptService.getInstance();
+      const availableLanguages = await transcriptService.getAvailableLanguages(videoId);
+      setLanguages(availableLanguages);
+    };
+    fetchLanguages();
+  }, [videoId]);
+
+  const handleClick = async (e: React.MouseEvent, languageCode?: string) => {
     e.preventDefault();
     e.stopPropagation();
-    await grabTranscript(videoId);
+    
+    if (!languageCode && languages.length > 1) {
+      setShowLanguages(!showLanguages);
+      return;
+    }
+    
+    await grabTranscript(videoId, languageCode);
     setShowTooltip(true);
+    setShowLanguages(false);
     setTimeout(() => setShowTooltip(false), 2000);
   };
 
@@ -38,13 +57,26 @@ export const TranscriptButton: React.FC<TranscriptButtonProps> = ({ videoId, but
       right: buttonType === 'title' ? '30px' : '8px',
     }}>
       <button
-        onClick={handleClick}
+        onClick={(e) => handleClick(e)}
         className={getButtonClass()}
         disabled={loading}
         title={getTooltipText()}
       >
         📝
       </button>
+      {showLanguages && languages.length > 0 && (
+        <div className="language-menu">
+          {languages.map((lang) => (
+            <button
+              key={lang.languageCode}
+              onClick={(e) => handleClick(e, lang.languageCode)}
+              className="language-option"
+            >
+              {lang.name.simpleText}
+            </button>
+          ))}
+        </div>
+      )}
       {showTooltip && (
         <div className="tooltip">
           {getTooltipText()}
