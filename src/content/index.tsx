@@ -7,7 +7,10 @@ import { TranscriptResponse } from '@/types/youtube';
 import { VideoPlayerButton } from '@/components/VideoPlayerButton/VideoPlayerButton';
 import '../styles/content.scss';
 
-const THUMBNAIL_SELECTOR = 'a#thumbnail:not(.transcript-button-added)';
+const SELECTORS = [
+  { selector: 'a#thumbnail:not(.transcript-button-added)', type: 'thumbnail' },
+  { selector: 'a#video-title:not(.transcript-button-added)', type: 'title' }
+] as const;
 
 // State for sidebar
 let sidebarRoot: HTMLDivElement | null = null;
@@ -97,13 +100,14 @@ function injectTranscriptButton(thumbnail: Element) {
   if (!videoId) return;
 
   const container = document.createElement('div');
-  container.className = 'transcript-button-container';
+  const selectorType = SELECTORS.find(s => thumbnail.matches(s.selector))?.type;
+  container.className = `transcript-button-container transcript-button-${selectorType}`;
   thumbnail.appendChild(container);
 
   thumbnail.classList.add('transcript-button-added');
 
   const root = createRoot(container);
-  root.render(<TranscriptButton videoId={videoId} />);
+  root.render(<TranscriptButton videoId={videoId} buttonType={selectorType} />);
 }
 
 function injectVideoPlayerButton() {
@@ -135,7 +139,9 @@ function init() {
 
   // Observe for thumbnail changes
   const observer = new MutationObserver(() => {
-    document.querySelectorAll(THUMBNAIL_SELECTOR).forEach(injectTranscriptButton);
+    SELECTORS.forEach(selector => {
+      document.querySelectorAll(selector.selector).forEach(injectTranscriptButton);
+    });
     injectVideoPlayerButton();
   });
 
@@ -145,7 +151,9 @@ function init() {
   });
 
   // Handle existing thumbnails
-  document.querySelectorAll(THUMBNAIL_SELECTOR).forEach(injectTranscriptButton);
+  SELECTORS.forEach(selector => {
+    document.querySelectorAll(selector.selector).forEach(injectTranscriptButton);
+  });
   injectVideoPlayerButton();
 }
 

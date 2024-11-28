@@ -35,6 +35,12 @@
   &.error {
     background-color: rgba(211, 47, 47, 0.9);
   }
+
+
+
+  &.transcript-button-title {
+   top:50px;
+  } 
 }
 
 @keyframes spin {
@@ -90,3 +96,4 @@ body.sidebar-open {
   margin-right: 300px;
   transition: margin-right 0.3s ease;
 } 
+

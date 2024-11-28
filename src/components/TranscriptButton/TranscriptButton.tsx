@@ -4,9 +4,10 @@ import { ButtonContainer } from './styles';
 
 interface TranscriptButtonProps {
   videoId: string;
+  buttonType?: 'thumbnail' | 'title';
 }
 
-export const TranscriptButton: React.FC<TranscriptButtonProps> = ({ videoId }) => {
+export const TranscriptButton: React.FC<TranscriptButtonProps> = ({ videoId, buttonType }) => {
   const { grabTranscript, loading, error, success } = useTranscript();
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -32,7 +33,10 @@ export const TranscriptButton: React.FC<TranscriptButtonProps> = ({ videoId }) =
   };
 
   return (
-    <ButtonContainer>
+    <ButtonContainer css={{
+      top: buttonType === 'title' ? '-13px' : '8px',
+      right: buttonType === 'title' ? '30px' : '8px',
+    }}>
       <button
         onClick={handleClick}
         className={getButtonClass()}
