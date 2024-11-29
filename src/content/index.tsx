@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { TranscriptService } from '@/services/transcript';
 import { TranscriptResponse } from '@/types/youtube';
 import { VideoPlayerButton } from '@/components/VideoPlayerButton/VideoPlayerButton';
+import { ShortsPlayerButton } from '@/components/ShortsPlayerButton/ShortsPlayerButton';
 import '../styles/content.scss';
 
 const SELECTORS = [
@@ -175,6 +176,33 @@ function injectVideoPlayerButton() {
   root.render(<VideoPlayerButton videoId={videoId} />);
 }
 
+function injectShortsPlayerButton() {
+  // Check if we're not on a Shorts page
+  if (!window.location.pathname.includes('/shorts/')) return;
+
+  // Remove any existing button first
+  const existingButton = document.querySelector('.transcript-shorts-button');
+  if (existingButton) return; // If button exists, don't add another one
+
+  // Find the Shorts action buttons container
+  const actionsContainer = document.querySelector('ytd-reel-player-overlay-renderer #actions');
+  if (!actionsContainer) return;
+
+  // Get video ID
+  const videoId = getCurrentVideoId();
+  if (!videoId) return;
+
+  // Create container for our button
+  const container = document.createElement('div');
+  container.className = 'transcript-shorts-button';
+  
+  // Insert our button after the like/dislike buttons
+  actionsContainer.appendChild(container);
+
+  const root = createRoot(container);
+  root.render(<ShortsPlayerButton videoId={videoId} />);
+}
+
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'TOGGLE_SIDEBAR') {
@@ -187,12 +215,28 @@ function init() {
   // Create sidebar container
   createSidebar();
 
-  // Observe for thumbnail changes
+  let isProcessing = false;
+
+  // Observe for thumbnail changes and Shorts player
   const observer = new MutationObserver(() => {
-    SELECTORS.forEach(selector => {
-      document.querySelectorAll(selector.selector).forEach(injectTranscriptButton);
+    if (isProcessing) return;
+    isProcessing = true;
+
+    // Use requestAnimationFrame to batch DOM updates
+    requestAnimationFrame(() => {
+      SELECTORS.forEach(selector => {
+        document.querySelectorAll(selector.selector).forEach(injectTranscriptButton);
+      });
+      
+      // Only inject player buttons if we're not already processing
+      if (window.location.pathname.includes('/shorts/')) {
+        injectShortsPlayerButton();
+      } else {
+        injectVideoPlayerButton();
+      }
+
+      isProcessing = false;
     });
-    injectVideoPlayerButton();
   });
 
   observer.observe(document.body, {
@@ -200,35 +244,39 @@ function init() {
     subtree: true
   });
 
-  // Handle existing thumbnails
+  // Handle existing thumbnails and player
   SELECTORS.forEach(selector => {
     document.querySelectorAll(selector.selector).forEach(injectTranscriptButton);
   });
-  injectVideoPlayerButton();
+
+  // Initial injection based on current page type
+  if (window.location.pathname.includes('/shorts/')) {
+    injectShortsPlayerButton();
+  } else {
+    injectVideoPlayerButton();
+  }
 
   // Handle YouTube SPA navigation
-  const handleNavigation = () => {
-    const currentVideoId = getCurrentVideoId();
-    if (currentVideoId && currentVideoId !== lastKnownVideoId) {
-      // Remove existing video player button
-      const existingButton = document.querySelector('.transcript-player-button');
-      if (existingButton) {
-        existingButton.remove();
-      }
-      // Inject new button
-      injectVideoPlayerButton();
-    }
-  };
-
-  // Listen for URL changes
   let lastUrl = location.href;
   new MutationObserver(() => {
     const url = location.href;
     if (url !== lastUrl) {
       lastUrl = url;
-      handleNavigation();
+      
+      // Clean up existing buttons
+      const existingShortButton = document.querySelector('.transcript-shorts-button');
+      const existingPlayerButton = document.querySelector('.transcript-player-button');
+      if (existingShortButton) existingShortButton.remove();
+      if (existingPlayerButton) existingPlayerButton.remove();
+
+      // Re-inject appropriate button
+      if (window.location.pathname.includes('/shorts/')) {
+        injectShortsPlayerButton();
+      } else {
+        injectVideoPlayerButton();
+      }
     }
   }).observe(document.body, { subtree: true, childList: true });
 }
 
-init(); 
+init();
