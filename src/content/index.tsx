@@ -9,30 +9,65 @@ import '../styles/content.scss';
 
 const SELECTORS = [
   { selector: 'a#thumbnail:not(.transcript-button-added)', type: 'thumbnail' },
-  { selector: 'a#video-title:not(.transcript-button-added)', type: 'title' }
+  { selector: 'a#video-title:not(.transcript-button-added)', type: 'title' },
+  { selector: '.ShortsLockupViewModelHostOutsideMetadataEndpoint:not(.transcript-button-added)', type: 'shorts' }
 ] as const;
 
 // State for sidebar
 let sidebarRoot: HTMLDivElement | null = null;
 let sidebarIsOpen = false;
 let currentTranscript: TranscriptResponse | null = null;
+let lastKnownVideoId: string | null = null;
 
 function extractVideoId(href: string): string | undefined {
-  const match = href.match(/(?:\/|%3D|v=)([0-9A-Za-z_-]{11})(?:[%#?&]|$)/);
-  return match?.[1];
+  // First try to extract from standard watch URL
+  const watchMatch = href.match(/[?&]v=([0-9A-Za-z_-]{11})/);
+  if (watchMatch) return watchMatch[1];
+  
+  // Then try to extract from shortened URL
+  const shortMatch = href.match(/youtu\.be\/([0-9A-Za-z_-]{11})/);
+  if (shortMatch) return shortMatch[1];
+  
+  // Try to extract from embed URL
+  const embedMatch = href.match(/embed\/([0-9A-Za-z_-]{11})/);
+  if (embedMatch) return embedMatch[1];
+  
+  // Extract from Shorts URL
+  const shortsMatch = href.match(/\/shorts\/([0-9A-Za-z_-]{11})/);
+  if (shortsMatch) return shortsMatch[1];
+  
+  return undefined;
 }
 
 function getCurrentVideoId(): string | undefined {
-  // Try to get video ID from URL first (for video pages)
-  const urlMatch = window.location.href.match(/(?:\/|%3D|v=)([0-9A-Za-z_-]{11})(?:[%#?&]|$)/);
-  if (urlMatch) return urlMatch[1];
+  // For video pages, get from URL
+  const urlVideoId = extractVideoId(window.location.href);
+  if (urlVideoId) {
+    // Update last known video ID if it's different
+    if (lastKnownVideoId !== urlVideoId) {
+      lastKnownVideoId = urlVideoId;
+      // Reset transcript when video changes
+      currentTranscript = null;
+    }
+    return urlVideoId;
+  }
 
-  // Fallback to checking the video player (for embedded videos)
+  // For embedded videos
   const videoElement = document.querySelector('video');
   if (videoElement) {
     const playerContainer = videoElement.closest('[data-video-id]');
-    const videoId = playerContainer?.getAttribute('data-video-id');
-    return videoId || undefined;
+    if (playerContainer) {
+      const videoId = playerContainer.getAttribute('data-video-id');
+      if (videoId) {
+        // Update last known video ID if it's different
+        if (lastKnownVideoId !== videoId) {
+          lastKnownVideoId = videoId;
+          // Reset transcript when video changes
+          currentTranscript = null;
+        }
+        return videoId;
+      }
+    }
   }
 
   return undefined;
@@ -96,13 +131,28 @@ function renderSidebar() {
 function injectTranscriptButton(thumbnail: Element) {
   if (!(thumbnail instanceof HTMLAnchorElement)) return;
   
+  // Check if this element's parent already has a transcript button
+  const existingButton = thumbnail.closest('.ShortsLockupViewModelHost')?.querySelector('.transcript-button-container');
+  if (existingButton) return;
+  
   const videoId = extractVideoId(thumbnail.href);
   if (!videoId) return;
 
   const container = document.createElement('div');
   const selectorType = SELECTORS.find(s => thumbnail.matches(s.selector))?.type;
   container.className = `transcript-button-container transcript-button-${selectorType}`;
-  thumbnail.appendChild(container);
+  
+  // For Shorts, append to the metadata container
+  if (selectorType === 'shorts') {
+    const metadataContainer = thumbnail.closest('.ShortsLockupViewModelHostOutsideMetadata');
+    if (metadataContainer) {
+      metadataContainer.appendChild(container);
+    } else {
+      thumbnail.appendChild(container);
+    }
+  } else {
+    thumbnail.appendChild(container);
+  }
 
   thumbnail.classList.add('transcript-button-added');
 
@@ -155,6 +205,30 @@ function init() {
     document.querySelectorAll(selector.selector).forEach(injectTranscriptButton);
   });
   injectVideoPlayerButton();
+
+  // Handle YouTube SPA navigation
+  const handleNavigation = () => {
+    const currentVideoId = getCurrentVideoId();
+    if (currentVideoId && currentVideoId !== lastKnownVideoId) {
+      // Remove existing video player button
+      const existingButton = document.querySelector('.transcript-player-button');
+      if (existingButton) {
+        existingButton.remove();
+      }
+      // Inject new button
+      injectVideoPlayerButton();
+    }
+  };
+
+  // Listen for URL changes
+  let lastUrl = location.href;
+  new MutationObserver(() => {
+    const url = location.href;
+    if (url !== lastUrl) {
+      lastUrl = url;
+      handleNavigation();
+    }
+  }).observe(document.body, { subtree: true, childList: true });
 }
 
 init(); 

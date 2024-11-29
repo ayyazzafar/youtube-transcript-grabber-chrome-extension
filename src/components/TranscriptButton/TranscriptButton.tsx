@@ -5,7 +5,7 @@ import { TranscriptService, CaptionTrack } from '@/services/transcript';
 
 interface TranscriptButtonProps {
   videoId: string;
-  buttonType?: 'thumbnail' | 'title';
+  buttonType?: 'thumbnail' | 'title' | 'shorts';
 }
 
 export const TranscriptButton: React.FC<TranscriptButtonProps> = ({ videoId, buttonType }) => {

@@ -3,6 +3,13 @@
   top: 8px;
   right: 8px;
   z-index: 90;
+
+  &.transcript-button-shorts {
+    position: static;
+    display: inline-flex;
+    margin-left: 8px;
+    margin-right: 8px;
+  }
 }
 
 .transcript-button {
@@ -35,8 +42,6 @@
   &.error {
     background-color: rgba(211, 47, 47, 0.9);
   }
-
-
 
   &.transcript-button-title {
    top:50px;
@@ -131,4 +136,3 @@ body.sidebar-open {
     }
   }
 }
-
